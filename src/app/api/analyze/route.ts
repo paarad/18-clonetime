@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { normalizeUrl, generateFingerprint, validateUrl } from '@/lib/analysis'
 import { crawlWebsite } from '@/lib/crawler'
 import { analyzeWebsite } from '@/lib/openai'
-import { AnalysisInsert, AnalysisResult } from '@/lib/database.types'
+import { AnalysisResult } from '@/lib/database.types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // If analysis exists, return it
     if (existingAnalysis) {
-      return NextResponse.json(existingAnalysis.result as AnalysisResult)
+      return NextResponse.json((existingAnalysis as { result: AnalysisResult }).result)
     }
 
     // Perform new analysis
@@ -68,16 +68,17 @@ export async function POST(request: NextRequest) {
     console.log(`Analysis complete: ${analysisResult.total_hours} hours`)
 
     // Step 3: Store in database
-    const analysisRecord: AnalysisInsert = {
+    const analysisRecord = {
       url: url,
       url_canonical: canonicalUrl,
       tier: tier,
       fingerprint: fingerprint,
-      result: analysisResult as any,
-      is_public: true // Make analyses public by default for MVP
+      result: analysisResult,
+      is_public: true
     }
 
-    const { error: insertError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: insertError } = await (supabase as any)
       .from('analyses')
       .insert([analysisRecord])
 
@@ -138,4 +139,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-} 
+}

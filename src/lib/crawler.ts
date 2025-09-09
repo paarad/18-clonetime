@@ -53,7 +53,7 @@ async function crawlSinglePage(url: string): Promise<CrawlResult> {
     try {
       // Fallback to simple fetch
       return await crawlWithFetch(url)
-    } catch (fetchError) {
+    } catch {
       return {
         url,
         title: '',

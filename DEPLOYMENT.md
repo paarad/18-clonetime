@@ -1,6 +1,6 @@
 # 🚀 Clonetime Deployment Guide
 
-This guide covers different deployment options for Clonetime.
+Simple deployment options for Clonetime MVP.
 
 ## 📋 Prerequisites
 
@@ -19,6 +19,7 @@ Vercel provides the easiest deployment for Next.js applications.
 ```bash
 git clone https://github.com/paarad/18-clonetime.git
 cd 18-clonetime
+npm install
 ```
 
 ### 2. Configure Environment Variables
@@ -45,46 +46,6 @@ Vercel has limitations with Playwright in serverless functions. For production, 
 - **Option A**: Use a separate crawling service (recommended)
 - **Option B**: Use Edge Runtime with fetch-only crawling
 - **Option C**: Deploy to platforms with longer timeout limits
-
-## 🐳 Docker Deployment
-
-For more control and better Playwright support.
-
-### 1. Build Image
-
-```bash
-docker build -t clonetime .
-```
-
-### 2. Run Container
-
-```bash
-docker run -p 3000:3000 \
-  -e NEXT_PUBLIC_SUPABASE_URL=your_url \
-  -e NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key \
-  -e OPENAI_API_KEY=your_openai_key \
-  clonetime
-```
-
-### 3. Docker Compose
-
-Create `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-services:
-  clonetime:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_SUPABASE_URL=your_url
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
-      - OPENAI_API_KEY=your_openai_key
-      - NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-Run with: `docker-compose up`
 
 ## ☁️ Railway Deployment
 
@@ -222,30 +183,6 @@ create policy "Users can create analyses" on analyses
 
 Set `NODE_ENV=development` to see detailed error messages.
 
-## 🔄 CI/CD Pipeline
-
-Example GitHub Actions workflow:
-
-```yaml
-name: Deploy
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '18'
-      - run: npm ci
-      - run: npm run build
-      - run: npm run lint
-      # Add deployment steps here
-```
-
 ## 📚 Additional Resources
 
 - [Next.js Deployment Docs](https://nextjs.org/docs/deployment)
@@ -255,4 +192,4 @@ jobs:
 
 ---
 
-Need help? Check our [GitHub Issues](https://github.com/paarad/18-clonetime/issues) or [Twitter](https://twitter.com/paarad). 
+Need help? Check our [GitHub Issues](https://github.com/paarad/18-clonetime/issues) or [Twitter](https://twitter.com/paarad).

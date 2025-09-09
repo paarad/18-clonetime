@@ -3,7 +3,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Clock, Users, Database, ExternalLink, Star } from 'lucide-react'
 import { AnalysisResult } from '@/lib/database.types'
 import { TierType } from '@/lib/analysis'
@@ -210,4 +209,4 @@ export default function AnalysisDisplay({ analysis, url, tier }: AnalysisDisplay
       </Card>
     </div>
   )
-} 
+}
