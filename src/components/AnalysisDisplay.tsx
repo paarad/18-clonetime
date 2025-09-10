@@ -18,16 +18,21 @@ export default function AnalysisDisplay({ analysis, url, tier }: AnalysisDisplay
     if (hours < 1) {
       return `${Math.round(hours * 60)}min`
     }
-    if (hours < 8) {
-      return `${hours.toFixed(1)}h`
-    }
-    const days = Math.floor(hours / 8)
-    const remainingHours = hours % 8
-    if (remainingHours === 0) {
-      return `${days}d`
-    }
-    return `${days}d ${remainingHours.toFixed(1)}h`
+    // Always show hours, never days - even complex apps should show hours here
+    return `${hours.toFixed(1)}h`
   }
+
+  const safeHostname = (() => {
+    try {
+      return new URL(url).hostname
+    } catch {
+      try {
+        return new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname
+      } catch {
+        return url
+      }
+    }
+  })()
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 0.8) return 'text-green-600'
@@ -52,6 +57,9 @@ export default function AnalysisDisplay({ analysis, url, tier }: AnalysisDisplay
                 <Clock className="w-6 h-6 text-blue-600" />
                 {formatHours(analysis.total_hours)}
               </CardTitle>
+              {analysis.summary && (
+                <p className="text-slate-700 mt-2">{analysis.summary}</p>
+              )}
               <CardDescription className="text-lg mt-1">
                 Estimated build time for{' '}
                 <a 
@@ -60,7 +68,7 @@ export default function AnalysisDisplay({ analysis, url, tier }: AnalysisDisplay
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline inline-flex items-center gap-1"
                 >
-                  {new URL(url).hostname}
+                  {safeHostname}
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </CardDescription>

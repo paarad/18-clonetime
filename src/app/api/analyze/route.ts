@@ -8,7 +8,7 @@ import { AnalysisResult } from '@/lib/database.types'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { url, tier } = body
+    const { url, tier, force } = body as { url: string; tier: string; force?: boolean }
 
     // Validate input
     if (!url || !tier) {
@@ -36,55 +36,59 @@ export async function POST(request: NextRequest) {
     const canonicalUrl = normalizeUrl(url)
     const fingerprint = generateFingerprint(canonicalUrl, tier)
 
-    // Check if analysis already exists
-    const { data: existingAnalysis, error: fetchError } = await supabase
-      .from('analyses')
-      .select('*')
-      .eq('fingerprint', fingerprint)
-      .single()
+    const shouldBypassCache = process.env.NODE_ENV === 'development' && force === true
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('Database fetch error:', fetchError)
-      return NextResponse.json(
-        { error: 'Database error' },
-        { status: 500 }
-      )
-    }
+    // Check if analysis already exists (unless bypassing cache)
+    if (!shouldBypassCache) {
+      const { data, error: fetchError } = await supabase
+        .from('clonetime_analyses')
+        .select('*')
+        .eq('fingerprint', fingerprint)
+        .single()
 
-    // If analysis exists, return it
-    if (existingAnalysis) {
-      return NextResponse.json((existingAnalysis as { result: AnalysisResult }).result)
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Database fetch error:', fetchError)
+        return NextResponse.json(
+          { error: 'Database error' },
+          { status: 500 }
+        )
+      }
+
+      // If analysis exists, return it
+      if (data) {
+        return NextResponse.json((data as { result: AnalysisResult }).result)
+      }
     }
 
     // Perform new analysis
-    console.log(`Starting analysis for ${canonicalUrl} (${tier})`)
+    console.log(`Starting analysis for ${canonicalUrl} (${tier})${shouldBypassCache ? ' [force]' : ''}`)
 
     // Step 1: Crawl the website
     const crawlResults = await crawlWebsite(url)
     console.log(`Crawled ${crawlResults.length} pages`)
 
     // Step 2: Analyze with OpenAI
-    const analysisResult = await analyzeWebsite(crawlResults, tier)
+    const analysisResult = await analyzeWebsite(crawlResults, tier as 'speedrun' | 'mvp' | 'prod-lite')
     console.log(`Analysis complete: ${analysisResult.total_hours} hours`)
 
-    // Step 3: Store in database
+    // Step 3: Store/update in database
     const analysisRecord = {
       url: url,
       url_canonical: canonicalUrl,
-      tier: tier,
+      tier: tier as 'speedrun' | 'mvp' | 'prod-lite',
       fingerprint: fingerprint,
       result: analysisResult,
       is_public: true
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: insertError } = await (supabase as any)
-      .from('analyses')
-      .insert([analysisRecord])
+    const { error: upsertError } = await (supabase as any)
+      .from('clonetime_analyses')
+      .upsert([analysisRecord], { onConflict: 'fingerprint' })
 
-    if (insertError) {
-      console.error('Database insert error:', insertError)
-      // Still return the analysis even if DB insert fails
+    if (upsertError) {
+      console.error('Database upsert error:', upsertError)
+      // Still return the analysis even if DB upsert fails
     }
 
     return NextResponse.json(analysisResult)
@@ -110,7 +114,7 @@ export async function GET(request: NextRequest) {
 
   try {
     let query = supabase
-      .from('analyses')
+      .from('clonetime_analyses')
       .select('*')
       .eq('is_public', true)
       .order('created_at', { ascending: false })

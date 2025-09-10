@@ -9,7 +9,7 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      analyses: {
+      clonetime_analyses: {
         Row: {
           id: string
           created_by: string | null
@@ -57,8 +57,8 @@ export interface Database {
   }
 }
 
-export type Analysis = Database['public']['Tables']['analyses']['Row']
-export type AnalysisInsert = Database['public']['Tables']['analyses']['Insert']
+export type Analysis = Database['public']['Tables']['clonetime_analyses']['Row']
+export type AnalysisInsert = Database['public']['Tables']['clonetime_analyses']['Insert']
 
 export interface AnalysisResult {
   total_hours: number
@@ -71,6 +71,7 @@ export interface AnalysisResult {
   }
   evidence: Evidence[]
   scope: string
+  summary?: string
 }
 
 export interface Mission {

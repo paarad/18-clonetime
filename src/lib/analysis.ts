@@ -2,7 +2,8 @@ import crypto from 'crypto-js'
 
 export function normalizeUrl(url: string): string {
   try {
-    const urlObj = new URL(url)
+    const input = /^(https?:)\/\//i.test(url) ? url : `https://${url}`
+    const urlObj = new URL(input)
     // Remove common tracking parameters and fragments
     const cleanUrl = `${urlObj.protocol}//${urlObj.hostname}${urlObj.pathname}`
     return cleanUrl.toLowerCase().replace(/\/$/, '') // Remove trailing slash
@@ -17,7 +18,8 @@ export function generateFingerprint(canonicalUrl: string, tier: string): string 
 
 export function validateUrl(url: string): boolean {
   try {
-    new URL(url)
+    const input = /^(https?:)\/\//i.test(url) ? url : `https://${url}`
+    new URL(input)
     return true
   } catch {
     return false

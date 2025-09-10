@@ -7,31 +7,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Clock, Zap, Target, CheckCircle } from 'lucide-react'
-import { validateUrl, TIER_OPTIONS, TierType } from '@/lib/analysis'
+import { validateUrl, TIER_OPTIONS, TierType, normalizeUrl } from '@/lib/analysis'
 import { AnalysisResult } from '@/lib/database.types'
 import AnalysisDisplay from '@/components/AnalysisDisplay'
 
 export default function HomePage() {
-  const [url, setUrl] = useState('')
+  const [inputUrl, setInputUrl] = useState('')
+  const [analyzedUrl, setAnalyzedUrl] = useState('')
   const [selectedTier, setSelectedTier] = useState<TierType>('mvp')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleAnalyze = async () => {
-    if (!url.trim()) {
+    if (!inputUrl.trim()) {
       setError('Please enter a URL')
       return
     }
 
-    if (!validateUrl(url)) {
+    const candidate = /^(https?:)\/\//i.test(inputUrl) ? inputUrl.trim() : `https://${inputUrl.trim()}`
+
+    if (!validateUrl(candidate)) {
       setError('Please enter a valid URL')
       return
     }
 
+    const canonical = normalizeUrl(candidate)
+
     setIsAnalyzing(true)
     setError(null)
     setAnalysis(null)
+    setAnalyzedUrl(canonical)
 
     try {
       const response = await fetch('/api/analyze', {
@@ -40,8 +46,9 @@ export default function HomePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: url.trim(),
+          url: canonical,
           tier: selectedTier,
+          force: process.env.NODE_ENV === 'development',
         }),
       })
 
@@ -97,9 +104,9 @@ export default function HomePage() {
             <Input
               id="url"
               type="url"
-              placeholder="https://example.com"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              placeholder="youtube.com"
+              value={inputUrl}
+              onChange={(e) => setInputUrl(e.target.value)}
               className="text-lg"
             />
           </div>
@@ -154,7 +161,7 @@ export default function HomePage() {
           {/* Analyze Button */}
           <Button 
             onClick={handleAnalyze}
-            disabled={isAnalyzing || !url.trim()}
+            disabled={isAnalyzing || !inputUrl.trim()}
             size="lg"
             className="w-full"
           >
@@ -174,7 +181,7 @@ export default function HomePage() {
       {analysis && (
         <AnalysisDisplay 
           analysis={analysis}
-          url={url}
+          url={analyzedUrl}
           tier={selectedTier}
         />
       )}
@@ -189,7 +196,7 @@ export default function HomePage() {
                 key={exampleUrl}
                 variant="outline" 
                 className="cursor-pointer hover:bg-slate-100"
-                onClick={() => setUrl(exampleUrl)}
+                onClick={() => setInputUrl(exampleUrl)}
               >
                 {exampleUrl.replace('https://', '')}
               </Badge>
