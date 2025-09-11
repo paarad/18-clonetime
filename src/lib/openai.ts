@@ -49,8 +49,8 @@ export async function analyzeWebsite(
     .map(result => `URL: ${result.url}\nTitle: ${result.title}\nContent: ${result.content}`)
     .join('\n\n---\n\n')
 
-  // Trim to keep token usage reasonable
-  const mainContent = mainContentUncapped.slice(0, 4000)
+  // Trim aggressively to keep token usage small
+  const mainContent = mainContentUncapped.slice(0, 2000)
 
   const tierMultipliers = {
     speedrun: 0.5,
@@ -120,7 +120,7 @@ For ${tier} tier, adjust base estimates appropriately (${tierMultipliers[tier]}x
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -132,7 +132,8 @@ For ${tier} tier, adjust base estimates appropriately (${tierMultipliers[tier]}x
         }
       ],
       temperature: 0.2,
-      max_tokens: 800
+      max_tokens: 500,
+      response_format: { type: 'json_object' }
     })
 
     const content = response.choices[0]?.message?.content
